@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ontario 2026 HST-Included New Home Rebate Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 580px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #1a365d;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 12px;
+        }
+        .info-tag {
+            background-color: #f0fff4;
+            color: #22543d;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            border-left: 4px solid #38a169;
+            line-height: 1.4;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper span {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 12px 12px 30px;
+            font-size: 1.1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #38a169;
+            box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.4);
+        }
+        .results-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        .results-box h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #edf2f7;
+        }
+        .row:last-of-type {
+            border-bottom: none;
+        }
+        .bonus-text {
+            color: #2b6cb0;
+            font-weight: 600;
+        }
+        .rebate-text {
+            color: #38a169;
+            font-weight: 600;
+        }
+        .final-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0 0 0;
+            margin-top: 10px;
+            border-top: 2px solid #2b6cb0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1a365d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Ontario HST New Housing Calculator</h2>
+    <div class="info-tag">
+        <strong>Sticker Price Mode:</strong> Builders in Ontario market homes with the standard $24,000 rebate already deducted. This tool reverse-calculates the hidden base price to find your total 2026 savings.
+    </div>
+
+    <div class="input-group">
+        <label for="stickerPrice">Builder's Advertised Price (HST Included)</label>
+        <div class="input-wrapper">
+            <span>$</span>
+            <input type="number" id="stickerPrice" placeholder="e.g. 1000000" min="0" oninput="calculateFromSticker()">
+        </div>
+    </div>
+
+    <div class="results-box">
+        <h3>Deconstructed Math Breakdown</h3>
+        <div class="row">
+            <span>True Base Price (Before Taxes):</span>
+            <span id="outBase">$0.00</span>
+        </div>
+        <div class="row">
+            <span>Gross Federal GST (5%):</span>
+            <span id="outFed">$0.00</span>
+        </div>
+        <div class="row">
+            <span>Gross Provincial OST (8%):</span>
+            <span id="outProv">$0.00</span>
+        </div>
+        <div class="row" style="font-weight: 600;">
+            <span>Total Raw HST (13%):</span>
+            <span id="outTotalHST">$0.00</span>
+        </div>
+        <div class="row">
+            <span>Standard Built-in Rebate (Already in Sticker):</span>
+            <span id="outStandardRebate">-$0.00</span>
+        </div>
+        <div class="row">
+            <span class="bonus-text">2026 Expansion Bonus Credit:</span>
+            <span id="outBonusRebate" class="bonus-text">-$0.00</span>
+        </div>
+        <div class="row" style="background-color: #f0fff4; padding: 10px; margin: 5px 0; border-radius: 4px;">
+            <span class="rebate-text">Combined Total Rebate:</span>
+            <span id="outTotalRebate" class="rebate-text">-$0.00</span>
+        </div>
+        <div class="final-row">
+            <span>Final Out of Pocket Net:</span>
+            <span id="outFinal">$0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatCurrency(val) {
+        return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(val);
+    }
+
+    function calculateFromSticker() {
+        const stickerPrice = parseFloat(document.getElementById('stickerPrice').value) || 0;
+        
+        let basePrice = 0;
+        let standardProvRebate = 0;
+
+        if (stickerPrice > 0) {
+            // Reverse engineering standard builder pricing structures (CRA GI-085 rules)
+            // For homes above standard thresholds where the $24,000 rebate has been maxed out:
+            if (stickerPrice > 484500) {
+                // Formula when max $24,000 provincial rebate is assigned to builder
+                basePrice = (stickerPrice - 24000) / 1.13;
+                standardProvRebate = 24000;
+            } else {
+                // Scaling calculation for affordable homes below the max legacy rebate threshold
+                basePrice = stickerPrice / 1.07;
+                standardProvRebate = (basePrice * 0.08) * 0.75;
+            }
+        }
+
+        // Calculate gross taxes from our newly discovered true base price
+        const fedGST = basePrice * 0.05;
+        const provHST = basePrice * 0.08;
+        const totalHST = basePrice * 0.13;
+
+        let total2026Rebate = 0;
+
+        // Apply 2026 expanded rules based on the true underlying base price
+        if (basePrice > 0) {
+            if (basePrice <= 1000000) {
+                total2026Rebate = totalHST; // Full 13% wiped out
+            } else if (basePrice <= 1500000) {
+                total2026Rebate = 130000;  // Capped max rebate
+            } else if (basePrice <= 1850000) {
+                // Sliding down linearly to the legacy $24k base
+                const range = 1850000 - 1500000;
+                const position = basePrice - 1500000;
+                const drop = (position / range) * (130000 - 24000);
+                total2026Rebate = 130000 - drop;
+            } else {
+                total2026Rebate = 24000; // Returns straight to baseline legacy amount
+            }
+        }
+
+        // The sticker price already had 'standardProvRebate' deducted. 
+        // The extra out of pocket drop comes from the expansion bonus.
+        const bonusRebate = Math.max(0, total2026Rebate - standardProvRebate);
+        const finalPrice = stickerPrice - bonusRebate;
+
+        // Update UI
+        document.getElementById('outBase').innerText = formatCurrency(basePrice);
+        document.getElementById('outFed').innerText = formatCurrency(fedGST);
+        document.getElementById('outProv').innerText = formatCurrency(provHST);
+        document.getElementById('outTotalHST').innerText = formatCurrency(totalHST);
+        document.getElementById('outStandardRebate').innerText = "-" + formatCurrency(standardProvRebate);
+        document.getElementById('outBonusRebate').innerText = "-" + formatCurrency(bonusRebate);
+        document.getElementById('outTotalRebate').innerText = "-" + formatCurrency(total2026Rebate);
+        document.getElementById('outFinal').innerText = formatCurrency(finalPrice);
+    }
+</script>
+
+</body>
+</html>
